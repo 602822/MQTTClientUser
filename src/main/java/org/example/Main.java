@@ -1,6 +1,7 @@
 package org.example;
 
 import java.io.IOException;
+import java.util.Properties;
 
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -8,12 +9,15 @@ public class Main {
         //comes from OAuth redirect after login
         String authCode = "authorization_code_here";
 
+        //loads sensitive data from properties file
+        Properties props = ConfigLoader.load();
 
-        String redirectUri = Config.REDIRECT_URI;
+        String redirectUri = props.getProperty("redirect_uri");
 
+        //proves that the auth code is coming from a legit application and not an imposter that intercepted the code
+        String clientId = props.getProperty("client_id");
+        String clientSecret = props.getProperty("client_secret");
 
-        String clientId = "your_client_id";
-        String clientSecret = "your_client_secret";
 
         TokenResponse tokenResponse = KeycloakAuth.getTokenUser(authCode, redirectUri, clientId, clientSecret);
         String jwtToken = tokenResponse.accessToken();
