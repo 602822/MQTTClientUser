@@ -16,7 +16,7 @@ public class Main {
         String clientSecret = "your_client_secret";
 
         TokenResponse tokenResponse = KeycloakAuth.getTokenUser(authCode, redirectUri, clientId, clientSecret);
-        String jwtToken = tokenResponse.accessToken;
+        String jwtToken = tokenResponse.accessToken();
 
         MQTTSubClient subscriberClient = new MQTTSubClient(Config.BROKER_URL, clientId);
 
@@ -32,8 +32,8 @@ public class Main {
                 Thread.sleep(1000);
                 if (JWTUtils.willExpireSoon(jwtToken, 60)) {
                     System.out.println("JWT is about to expire, refreshing...");
-                    tokenResponse = KeycloakAuth.refreshToken(tokenResponse.refreshToken, clientId, clientSecret);
-                    jwtToken = tokenResponse.accessToken;
+                    tokenResponse = KeycloakAuth.refreshToken(tokenResponse.refreshToken(), clientId, clientSecret);
+                    jwtToken = tokenResponse.accessToken();
                     subscriberClient.connect(jwtToken); //reconnect with new token
                 }
 
