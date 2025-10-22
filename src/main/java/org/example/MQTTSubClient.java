@@ -37,6 +37,19 @@ public class MQTTSubClient {
         }
     }
 
+    public void refreshConnection(String newJwtToken) {
+        try {
+            if (subscriberClient != null && subscriberClient.isConnected()) {
+                subscriberClient.disconnect();
+            }
+            System.out.println("Reconnecting with new JWT token...");
+            connect(newJwtToken);
+        } catch (MqttException e) {
+            System.err.println("Failed to reconnect after token refresh: " + e.getMessage());
+        }
+    }
+
+
     public void subscribe(String topic) {
         try {
             if (subscriberClient != null && subscriberClient.isConnected()) {

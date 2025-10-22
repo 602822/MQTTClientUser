@@ -34,7 +34,7 @@ public class Main {
                     System.out.println("JWT is about to expire, refreshing...");
                     tokenResponse = KeycloakAuth.refreshToken(tokenResponse.refreshToken(), clientId, clientSecret);
                     jwtToken = tokenResponse.accessToken();
-                    subscriberClient.connect(jwtToken); //reconnect with new token
+                    subscriberClient.refreshConnection(jwtToken); //reconnect with new token
                 }
 
             } catch (InterruptedException e) {

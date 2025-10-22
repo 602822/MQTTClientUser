@@ -24,11 +24,6 @@ public class JWTUtils {
         }
     }
 
-    public static boolean isExpired(String jwtToken) {
-        Instant expirationTime = getExpirationTime(jwtToken);
-        return Instant.now().isAfter(expirationTime);
-    }
-
     public static boolean willExpireSoon(String jwtToken, long secondsThreshold) {
         Instant expirationTime = getExpirationTime(jwtToken);
         return Instant.now().isAfter(expirationTime.minusSeconds(secondsThreshold));
