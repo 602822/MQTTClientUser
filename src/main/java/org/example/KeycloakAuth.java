@@ -11,7 +11,7 @@ import java.net.http.HttpResponse;
 public class KeycloakAuth {
 
 
-    public static TokenResponse getTokenUser(String code, String redirectUri, String clientId, String clientSecret) throws IOException, InterruptedException {
+    public static TokenResponse getTokenUserPKCE(String code, String redirectUri, String clientId, String codeVerifier) throws IOException, InterruptedException {
 
         String urlString = Config.BASE_URL + "/realms/" + Config.KEYCLOAK_REALM + "/protocol/openid-connect/token"; // change to use HTTPS, can't use localhost in production
 
@@ -20,7 +20,7 @@ public class KeycloakAuth {
                 + "&code=" + code
                 + "&redirect_uri=" + redirectUri
                 + "&client_id=" + clientId
-                + "&client_secret=" + clientSecret;
+                + "&code_verifier=" + codeVerifier;
 
         return requestToken(urlString, data);
     }
@@ -44,21 +44,22 @@ public class KeycloakAuth {
         return new TokenResponse(accessToken, refreshToken, expiresIn);
     }
 
-    public static TokenResponse refreshToken(String refreshToken, String clientId, String clientSecret) {
+    public static TokenResponse refreshToken(String refreshToken, String clientId) throws InterruptedException {
         String urlString = Config.BASE_URL + "/realms/" + Config.KEYCLOAK_REALM + "/protocol/openid-connect/token"; // change to use HTTPS, can't use localhost in production
 
         //refresh token flow
         String data = "grant_type=refresh_token"
                 + "&refresh_token=" + refreshToken
-                + "&client_id=" + clientId
-                + "&client_secret=" + clientSecret;
+                + "&client_id=" + clientId;
+
 
         try {
             return requestToken(urlString, data);
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException | IOException e) {
             throw new RuntimeException(e);
         }
 
-
     }
+
+
 }

@@ -1,26 +1,47 @@
 package org.example;
 
+import java.awt.*;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
 
-        //comes from OAuth redirect after login
-        String authCode = "authorization_code_here";
-
         //loads sensitive data from properties file
         Properties props = ConfigLoader.load();
 
-        String redirectUri = props.getProperty("redirect_uri");
+        //proves that the auth code is coming from a legit application and not an imposter
+        String clientId = props.getProperty("CLIENT_ID");
 
-        //proves that the auth code is coming from a legit application and not an imposter that intercepted the code
-        String clientId = props.getProperty("client_id");
-        String clientSecret = props.getProperty("client_secret");
+        String redirectUri = props.getProperty("REDIRECT_URI");
 
 
-        TokenResponse tokenResponse = KeycloakAuth.getTokenUser(authCode, redirectUri, clientId, clientSecret);
+        String codeVerifier = PKCEUtils.generateCodeVerifier();
+        String codeChallenge = PKCEUtils.generateCodeChallenge(codeVerifier);
+
+
+        String authUrl = PKCEUtils.generateAuthURL(clientId, redirectUri, codeChallenge);
+
+        System.out.println("Opening browser for Keycloak login...");
+        if (Desktop.isDesktopSupported()) {
+            Desktop.getDesktop().browse(URI.create(authUrl));
+        } else {
+            System.out.println("Please open the following URL in your browser to authenticate:");
+            System.out.println(authUrl);
+        }
+
+        //Retrieves the authorization code asynchronously once the user has authenticated
+        CompletableFuture<String> codeFuture = AuthServer.waitForAuthCode(8081);
+        String authCode = codeFuture.join();
+        System.out.println("Received auth code: " + authCode);
+
+        // Keycloak compares the codeVerifier with the previously sent codeChallenge to ensure they match
+        // Only issues token if they match
+        TokenResponse tokenResponse = KeycloakAuth.getTokenUserPKCE(authCode, redirectUri, clientId, codeVerifier);
         String jwtToken = tokenResponse.accessToken();
+        System.out.println("JWT Token: " + jwtToken);
 
         MQTTSubClient subscriberClient = new MQTTSubClient(Config.BROKER_URL, clientId);
 
@@ -34,9 +55,12 @@ public class Main {
         while (true) {
             try {
                 Thread.sleep(1000);
+
+                //Check if the token is about to expire in the next 60 seconds
+                //Refresh it if needed
                 if (JWTUtils.willExpireSoon(jwtToken, 60)) {
                     System.out.println("JWT is about to expire, refreshing...");
-                    tokenResponse = KeycloakAuth.refreshToken(tokenResponse.refreshToken(), clientId, clientSecret);
+                    tokenResponse = KeycloakAuth.refreshToken(tokenResponse.refreshToken(), clientId);
                     jwtToken = tokenResponse.accessToken();
                     subscriberClient.refreshConnection(jwtToken); //reconnect with new token
                 }
