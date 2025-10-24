@@ -63,6 +63,7 @@ public class Main {
                     tokenResponse = KeycloakAuth.refreshToken(tokenResponse.refreshToken(), clientId);
                     jwtToken = tokenResponse.accessToken();
                     subscriberClient.refreshConnection(jwtToken); //reconnect with new token
+                    subscriberClient.subscribe("sensors/+/temperature");
                 }
 
             } catch (InterruptedException e) {
