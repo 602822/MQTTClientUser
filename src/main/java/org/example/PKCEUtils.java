@@ -30,7 +30,8 @@ public class PKCEUtils {
     public static String generateAuthURL(String clientId, String redirectUri, String codeChallenge) {
         return String.format(
                 "%s/realms/%s/protocol/openid-connect/auth?" +
-                        "response_type=code&client_id=%s&redirect_uri=%s&scope=openid&code_challenge=%s&code_challenge_method=S256",
+                        "response_type=code&client_id=%s&redirect_uri=%s&scope=openid&code_challenge=%s" +
+                        "&code_challenge_method=S256",
                 Config.BASE_URL,
                 Config.KEYCLOAK_REALM,
                 clientId,

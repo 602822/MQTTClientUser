@@ -1,27 +1,26 @@
 package org.example;
 
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
+import java.text.ParseException;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
 public class Main {
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException, ParseException {
 
         //loads sensitive data from properties file
         Properties props = ConfigLoader.load();
 
         //proves that the auth code is coming from a legit application and not an imposter
         String clientId = props.getProperty("CLIENT_ID");
-
         String redirectUri = props.getProperty("REDIRECT_URI");
-
 
         String codeVerifier = PKCEUtils.generateCodeVerifier();
         String codeChallenge = PKCEUtils.generateCodeChallenge(codeVerifier);
-
-
         String authUrl = PKCEUtils.generateAuthURL(clientId, redirectUri, codeChallenge);
 
         System.out.println("Opening browser for Keycloak login...");
@@ -45,8 +44,15 @@ public class Main {
 
         MQTTSubClient subscriberClient = new MQTTSubClient(Config.BROKER_URL, clientId);
 
+        //Extracting location and provider from jwt to construct the topic
+        SignedJWT signedJWT = SignedJWT.parse(jwtToken);
+        JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+        String location = claimsSet.getStringClaim("location");
+        String provider = claimsSet.getStringClaim("provider");
+        String topic = String.format("smartocean/%s/%s/+/temperature", location, provider);
+
         subscriberClient.connect(jwtToken);
-        subscriberClient.subscribe("sensors/+/temperature");
+        subscriberClient.subscribe(topic);
 
         System.out.println("User is now subscribed to temperature data, waiting for messages...");
 
@@ -63,7 +69,7 @@ public class Main {
                     tokenResponse = KeycloakAuth.refreshToken(tokenResponse.refreshToken(), clientId);
                     jwtToken = tokenResponse.accessToken();
                     subscriberClient.refreshConnection(jwtToken); //reconnect with new token
-                    subscriberClient.subscribe("sensors/+/temperature");
+                    subscriberClient.subscribe(topic);
                 }
 
             } catch (InterruptedException e) {
