@@ -2,6 +2,7 @@ package org.example;
 
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+
 import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
@@ -18,6 +19,7 @@ public class Main {
         //proves that the auth code is coming from a legit application and not an imposter
         String clientId = props.getProperty("CLIENT_ID");
         String redirectUri = props.getProperty("REDIRECT_URI");
+
 
         String codeVerifier = PKCEUtils.generateCodeVerifier();
         String codeChallenge = PKCEUtils.generateCodeChallenge(codeVerifier);
@@ -42,19 +44,22 @@ public class Main {
         String jwtToken = tokenResponse.accessToken();
         System.out.println("JWT Token: " + jwtToken);
 
-        MQTTSubClient subscriberClient = new MQTTSubClient(Config.BROKER_URL, clientId);
 
-        //Extracting location and provider from jwt to construct the topic
         SignedJWT signedJWT = SignedJWT.parse(jwtToken);
-        JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-        String location = claimsSet.getStringClaim("location");
-        String provider = claimsSet.getStringClaim("provider");
-        String topic = String.format("smartocean/%s/%s/+/temperature", location, provider);
+        String username = signedJWT.getJWTClaimsSet().getStringClaim("preferred_username");
+        String mqttClientId = clientId + "-" + username;
+
+        MQTTSubClient subscriberClient = new MQTTSubClient(Config.BROKER_URL, mqttClientId);
+
+        String topic = "smartocean/Austevoll/Aanderaa/sensor-1/temperature";
+
 
         subscriberClient.connect(jwtToken);
-        subscriberClient.subscribe(topic);
+        System.out.println("Connected to the broker as : " + mqttClientId);
 
+        subscriberClient.subscribe(topic);
         System.out.println("User is now subscribed to temperature data, waiting for messages...");
+
 
         //Keeps the main thread alive, preventing the JVM from shutting down
         //so the client can continue receiving messages
