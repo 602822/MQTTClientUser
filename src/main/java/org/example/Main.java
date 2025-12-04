@@ -1,13 +1,12 @@
 package org.example;
 
-import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-
 import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.text.ParseException;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
 
 public class Main {
@@ -51,11 +50,16 @@ public class Main {
 
         MQTTSubClient subscriberClient = new MQTTSubClient(Config.BROKER_URL, mqttClientId);
 
-        String topic = "smartocean/Austevoll/Aanderaa/sensor-1/temperature";
 
 
         subscriberClient.connect(jwtToken);
         System.out.println("Connected to the broker as : " + mqttClientId);
+
+
+        System.out.println("Subscribe to a topic on the line below: ");
+        Scanner scanner = new Scanner(System.in);
+        String topic = scanner.nextLine();
+        scanner.close();
 
         subscriberClient.subscribe(topic);
         System.out.println("User is now subscribed to temperature data, waiting for messages...");
