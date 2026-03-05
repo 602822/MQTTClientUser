@@ -33,7 +33,7 @@ public class Main {
         }
 
         //Retrieves the authorization code asynchronously once the user has authenticated
-        CompletableFuture<String> codeFuture = AuthServer.waitForAuthCode(8085);
+        CompletableFuture<String> codeFuture = AuthServer.waitForAuthCode(8081);
         String authCode = codeFuture.join();
         System.out.println("Received auth code: " + authCode);
 
