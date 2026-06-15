@@ -1,5 +1,5 @@
 # MQTT Client User
-
+(AI Generated ReadME file)
 A secure Java-based MQTT client application that integrates with Keycloak for OAuth2/OpenID Connect authentication and enables real-time IoT device communication.
 
 ## Overview
